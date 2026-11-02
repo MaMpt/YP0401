@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'config/config.dart';
 import 'providers/auth_notifier.dart';
-import 'repositories/api_client.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 
 void main() {
-  final apiClient = ApiClient(apiBaseUrl);
-
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => AuthNotifier(apiClient)..loadToken(),
+          create: (_) => AuthNotifier()..loadToken(),
         ),
       ],
       child: const MyApp(),

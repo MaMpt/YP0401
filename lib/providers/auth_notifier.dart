@@ -1,16 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
-import '../repositories/api_client.dart';
-import '../repositories/api_exceptions.dart';
+import '../repositories/mock_auth_api.dart';
 
 class AuthNotifier extends ChangeNotifier {
-  final ApiClient _apiClient;
   AppUser? _user;
   String? _token;
   bool _isLoading = false;
 
-  AuthNotifier(this._apiClient);
+  AuthNotifier();
 
   AppUser? get user => _user;
   String? get token => _token;
@@ -22,7 +20,6 @@ class AuthNotifier extends ChangeNotifier {
     _token = prefs.getString('token');
 
     if (_token != null) {
-      _apiClient.setToken(_token);
       try {
         await _loadUser();
       } catch (e) {
@@ -33,7 +30,7 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> _loadUser() async {
-    final data = await _apiClient.get<Map<String, dynamic>>('/auth/me');
+    final data = await MockAuthApi.getMe(_token!);
     _user = AppUser.fromJson(data['user']);
   }
 
@@ -42,14 +39,10 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await _apiClient.post<Map<String, dynamic>>(
-        '/auth/login',
-        {'username': username, 'password': password},
-      );
+      final data = await MockAuthApi.login(username, password);
 
       _token = data['token'] as String;
       _user = AppUser.fromJson(data['user']);
-      _apiClient.setToken(_token);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', _token!);
@@ -66,7 +59,6 @@ class AuthNotifier extends ChangeNotifier {
   Future<void> logout() async {
     _token = null;
     _user = null;
-    _apiClient.setToken(null);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
